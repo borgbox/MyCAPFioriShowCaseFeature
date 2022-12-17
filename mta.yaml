@@ -1,0 +1,121 @@
+_schema-version: "3.1"
+ID: myfeatureshowcase
+description: A simple CAP project.
+version: 1.0.0
+modules:
+- name: myfeatureshowcase-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: uaa_myfeatureshowcase
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+  build-parameters:
+    builder: npm-ci
+- name: myfeatureshowcase-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: myfeatureshowcase-destination-service
+    parameters:
+      content-target: true
+  - name: myfeatureshowcase_html_repo_host
+    parameters:
+      service-key:
+        name: myfeatureshowcase_html_repo_host-key
+  - name: uaa_myfeatureshowcase
+    parameters:
+      service-key:
+        name: uaa_myfeatureshowcase-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: myapprouter_myfeatureshowcase_html_repo_host
+          ServiceInstanceName: myfeatureshowcase-html5-app-host-service
+          ServiceKeyName: myfeatureshowcase_html_repo_host-key
+          sap.cloud.service: myapprouter
+        - Authentication: OAuth2UserTokenExchange
+          Name: myapprouter_uaa_myfeatureshowcase
+          ServiceInstanceName: myfeatureshowcase-xsuaa-service
+          ServiceKeyName: uaa_myfeatureshowcase-key
+          sap.cloud.service: myapprouter
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: myfeatureshowcase-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: myfeatureshowcase_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - commymyappui.zip
+      name: commymyappui
+      target-path: resources/
+- name: commymyappui
+  type: html5
+  path: app/myappui
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: myfeatureshowcase-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          - Authentication: NoAuthentication
+            HTML5.DynamicDestination: true
+            HTML5.ForwardAuthToken: true
+            Name: myfeatureshowcase-srv-api
+            ProxyType: Internet
+            Type: HTTP
+            URL: ~{srv-api/srv-url}
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: myfeatureshowcase-destination-service
+    service-plan: lite
+  requires:
+  - name: srv-api
+- name: myfeatureshowcase_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: myfeatureshowcase-html5-app-host-service
+    service-plan: app-host
+- name: uaa_myfeatureshowcase
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: myfeatureshowcase-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npx -p @sap/cds-dk cds build --production
