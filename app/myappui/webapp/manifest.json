@@ -149,24 +149,9 @@
                             "entitySet": "RootEntities",
                             "navigation": {},
                             "controlConfiguration": {
-                                "child1n/@com.sap.vocabularies.UI.v1.LineItem": {
+                                "childEntities1/@com.sap.vocabularies.UI.v1.LineItem#child1n": {
                                     "tableSettings": {
-                                        "type": "GridTable",
-                                        "enablePaste": false,
-                                        "enableFullScreen": true,
-                                        "creationMode": {
-                                            "name": "Inline",
-                                            "createAtEnd": true
-                                        },
-                                        "personalization": {
-                                            "column": true,
-                                            "sort": false,
-                                            "filter": true
-                                        },
-                                        "editableHeaderContent": false,
-                                        "showRelatedApps": true,
-                                        "enableMassEdit": true,
-                                        "enableExport": true
+                                        "enableExport": false
                                     }
                                 }
                             }
